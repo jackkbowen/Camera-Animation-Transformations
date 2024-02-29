@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Program 3: Smooth Shading and Lighting</title>
+  </head>
+
+  <body onload="main()">
+    <div class="container">
+      <canvas id="webgl" width="500" height="500"></canvas>
+      <div class="slider-container">
+        <label for="toggleCheckbox">Wireframe Toggle </label>
+        <input type="checkbox" id="toggleCheckbox">
+        <label for="toggleAmbient">Ambient Toggle </label>
+        <input type="checkbox" id="toggleAmbient" checked>
+        <label for="toggleDiffused">Diffused Toggle </label>
+        <input type="checkbox" id="toggleDiffused" >
+        <label for="toggleSpecular">Specular Toggle </label>
+        <input type="checkbox" id="toggleSpecular">
+        <br>
+        <label for="toggleDir">Directional Light Toggle </label>
+        <input type="checkbox" id="toggleDir" checked>
+        <label for="togglePoint">Point Light Toggle </label>
+        <input type="checkbox" id="togglePoint">
+        <label for="toggleGouraud">Gouraud Toggle </label>
+        <input type="checkbox" id="toggleGouraud">
+        <br>
+
+        <Label>Translate X    </Label><input type="range" min="-100" max="100" value="0", id = "moveX">
+        <Label>Y    </Label><input type="range" min="-100" max="100" value="0", id = "moveY">
+        <Label>Z    </Label><input type="range" min="-100" max="100" value="0", id = "moveZ">
+        <br>
+        <Label>Rotation X    </Label><input type="range" min="0" max="360" value="0", id = "rotationX">
+        <Label>Y    </Label><input type="range" min="0" max="360" value="0", id = "rotationY">
+        <Label>Z    </Label><input type="range" min="0" max="360" value="0", id = "rotationZ">
+        <br>
+        <br>
+       
+      </div>
+    </div>
+
+    <script src="../code/lib/webgl-utils.js"></script>
+    <script src="../code/lib/webgl-debug.js"></script>
+    <script src="../code/lib/cuon-utils.js"></script>
+    <script src="../code/lib/cuon-matrix.js"></script>
+    <script src="../code/ShadingAndLighting.js"></script>
+  </body>
+</html>
