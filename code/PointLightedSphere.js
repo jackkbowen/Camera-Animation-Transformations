@@ -96,8 +96,8 @@ function main() {
   var mvpMatrix = new Matrix4(); 　 // Model view projection matrix
   var normalMatrix = new Matrix4(); // Transformation matrix for normals
 
-  modelMatrix.translate(-1, 0, 0);
-  modelMatrix.rotate(-30, 1, 0, 0);  
+  //modelMatrix.translate(-1, 0, 0);
+  //modelMatrix.rotate(-30, 1, 0, 0);  
   // Pass the model matrix to u_ModelMatrix
   gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
 

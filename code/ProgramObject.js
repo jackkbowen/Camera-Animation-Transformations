@@ -79,12 +79,11 @@ function main() {
   // Calculate the view projection matrix
   var viewProjMatrix = new Matrix4();
   viewProjMatrix.setPerspective(30.0, canvas.width/canvas.height, 1.0, 100.0);
-  viewProjMatrix.lookAt(0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 
   gl.useProgram(cylinderProgram);
   
   // Set the light color (white)
-  gl.uniform3f(cylinderProgram.u_DiffuseLight, 0.5, 0.5, 0.5);
+  gl.uniform3f(cylinderProgram.u_DiffuseLight, 1.0, 1.0, 1.0);
 
   var lightDirection = new Vector3([0.3, 5.0, 4.0]);
   lightDirection.normalize();     // Normalize
@@ -100,6 +99,7 @@ function main() {
     currentAngle = animate(currentAngle);  // Update current rotation angle
 
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); // Clear color and depth buffers
+    viewProjMatrix.lookAt(currentAngle/32, 0.0, 3.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
     // Draw a cube in single color
     initCylinders(gl, cylinderProgram, cube, -2.0, currentAngle, viewProjMatrix);
     
@@ -235,8 +235,21 @@ function initCylinders(gl, program, o, x, angle, viewProjMatrix) {
   initAttributeVariable(gl, program.a_Position, o.vertexBuffer); // Vertex coordinates
   initAttributeVariable(gl, program.a_Normal, o.normalBuffer);   // Normal
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, o.indexBuffer);  // Bind indices
+  
+  // Calculate a model matrix
+   g_modelMatrix.setTranslate(-.6, 0.0, 0.0);
+   g_modelMatrix.rotate(20.0, 1.0, 0.0, 0.0);
+   g_modelMatrix.rotate(angle, 0.0, 1.0, 0.0);
 
   drawCylinders(gl, program, o, x, angle, viewProjMatrix);   // Draw
+
+  
+  // Calculate a model matrix
+  g_modelMatrix.setTranslate(.6, 0.0, 0.0);
+  g_modelMatrix.rotate(35.0, 1.0, 0.0, 0.0);
+  g_modelMatrix.rotate(angle, 0.0, 1.0, 0.0);
+
+ drawCylinders(gl, program, o, x, angle, viewProjMatrix);   // Draw
 }
 
 // Assign the buffer objects and enable the assignment
@@ -248,10 +261,7 @@ function initAttributeVariable(gl, a_attribute, buffer) {
 
 
 function drawCylinders(gl, program, o, x, angle, viewProjMatrix) {
-  // Calculate a model matrix
-  g_modelMatrix.setTranslate(0, 0.0, 0.0);
-  g_modelMatrix.rotate(20.0, 1.0, 0.0, 0.0);
-  g_modelMatrix.rotate(angle, 0.0, 1.0, 0.0);
+ 
 
   // Calculate transformation matrix for normals and pass it to u_NormalMatrix
   g_normalMatrix.setInverseOf(g_modelMatrix);

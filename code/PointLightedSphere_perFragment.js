@@ -86,9 +86,9 @@ function main() {
   // Set the light color (white)
   gl.uniform3f(u_LightColor, 0.8, 0.8, 0.8);
   // Set the light direction (in the world coordinate)
-  gl.uniform3f(u_LightPosition, 0.0, 0.0, 1.0);
+  gl.uniform3f(u_LightPosition, 4.0, 1.0, 1.0);
   // Set the ambient light
-  gl.uniform3f(u_AmbientLight, 0.2, 0.2, 0.2);
+  gl.uniform3f(u_AmbientLight, 0.5, 0.2, 0.2);
 
   var modelMatrix = new Matrix4();  // Model matrix
   var mvpMatrix = new Matrix4();    // Model view projection matrix
@@ -98,7 +98,7 @@ function main() {
   modelMatrix.setRotate(90, 0, 1, 0); // Rotate around the y-axis
   // Calculate the view projection matrix
   mvpMatrix.setPerspective(30, canvas.width/canvas.height, 1, 100);
-  mvpMatrix.lookAt(0, 0, 6, 0, 0, 0, 0, 1, 0);
+  mvpMatrix.lookAt(5, 5, 5, 0, 0, 0, 0, 1, 0);
   mvpMatrix.multiply(modelMatrix);
   // Calculate the matrix to transform the normal based on the model matrix
   normalMatrix.setInverseOf(modelMatrix);
@@ -120,39 +120,40 @@ function main() {
   gl.drawElements(gl.TRIANGLES, n, gl.UNSIGNED_SHORT, 0);
 }
 
-function initVertexBuffers(gl) { // Create a cylinder
-  var CYLINDER_DIV = 40;
+function initVertexBuffers(gl) {
+  var CYLINDER_DIV = 15;
   var CYLINDER_HEIGHT = 1.0;
   var CYLINDER_RADIUS = 0.5;
 
-  var i, ai, si, ci;
-  var j, aj, sj, cj;
-  var p1, p2;
-
   var positions = [];
+  var normals = [];
   var indices = [];
 
-  // Generate coordinates
-  for (j = 0; j <= CYLINDER_DIV; j++) {
-    aj = (j / CYLINDER_DIV) * 2 * Math.PI;
-    sj = Math.sin(aj);
-    cj = Math.cos(aj);
-    for (i = 0; i <= CYLINDER_DIV; i++) {
-      ai = i * 2 * Math.PI / CYLINDER_DIV;
-      si = Math.sin(ai);
-      ci = Math.cos(ai);
+  // Generate side vertices and normals
+  for (var j = 0; j <= CYLINDER_DIV; j++) {
+    var aj = j * 2 * Math.PI / CYLINDER_DIV;
+    var sj = Math.sin(aj);
+    var cj = Math.cos(aj);
+    for (var i = 0; i <= CYLINDER_DIV; i++) {
+      var ai = i * 2 * Math.PI / CYLINDER_DIV;
+      var si = Math.sin(ai);
+      var ci = Math.cos(ai);
 
       positions.push(si * CYLINDER_RADIUS);  // X
-      positions.push(-CYLINDER_HEIGHT / 2 + j * CYLINDER_HEIGHT / CYLINDER_DIV);       // Y
+      positions.push(-CYLINDER_HEIGHT / 2 + j * CYLINDER_HEIGHT / CYLINDER_DIV);  // Y
       positions.push(ci * CYLINDER_RADIUS);  // Z
+
+      normals.push(si);  // X
+      normals.push(0);   // Y
+      normals.push(ci);  // Z
     }
   }
 
-  // Generate indices
-  for (j = 0; j < CYLINDER_DIV; j++) {
-    for (i = 0; i < CYLINDER_DIV; i++) {
-      p1 = j * (CYLINDER_DIV + 1) + i;
-      p2 = p1 + (CYLINDER_DIV + 1);
+  // Generate indices for the sides
+  for (var j = 0; j < CYLINDER_DIV; j++) {
+    for (var i = 0; i < CYLINDER_DIV; i++) {
+      var p1 = j * (CYLINDER_DIV + 1) + i;
+      var p2 = p1 + (CYLINDER_DIV + 1);
 
       indices.push(p1);
       indices.push(p2);
@@ -163,6 +164,42 @@ function initVertexBuffers(gl) { // Create a cylinder
       indices.push(p2 + 1);
     }
   }
+
+  // Generate vertices and indices for top and bottom circles
+  var centerTop = [0, CYLINDER_HEIGHT / 2, 0];
+  var centerBottom = [0, -CYLINDER_HEIGHT / 2, 0];
+  var topIndices = [];
+  var bottomIndices = [];
+
+  // Top circle
+  var topCenterIndex = positions.length / 3;
+  positions.push(...centerTop);
+  normals.push(0, 1, 0);
+  for (var i = 0; i < CYLINDER_DIV; i++) {
+    var angle = i * 2 * Math.PI / CYLINDER_DIV;
+    var x = Math.cos(angle) * CYLINDER_RADIUS;
+    var z = Math.sin(angle) * CYLINDER_RADIUS;
+    positions.push(x, CYLINDER_HEIGHT / 2, z);
+    normals.push(0, 1, 0);
+    topIndices.push(topCenterIndex, topCenterIndex + i + 1, topCenterIndex + (i + 1) % CYLINDER_DIV + 1);
+  }
+
+  // Bottom circle
+  var bottomCenterIndex = positions.length / 3;
+  positions.push(...centerBottom);
+  normals.push(0, -1, 0);
+  for (var i = 0; i < CYLINDER_DIV; i++) {
+    var angle = i * 2 * Math.PI / CYLINDER_DIV;
+    var x = Math.cos(angle) * CYLINDER_RADIUS;
+    var z = Math.sin(angle) * CYLINDER_RADIUS;
+    positions.push(x, -CYLINDER_HEIGHT / 2, z);
+    normals.push(0, -1, 0);
+    bottomIndices.push(bottomCenterIndex, bottomCenterIndex + (i + 1) % CYLINDER_DIV + 1, bottomCenterIndex + i + 1);
+  }
+
+  // Connect the circles
+  indices.push(...topIndices);
+  indices.push(...bottomIndices);
 
   // Write the vertex property to buffers (coordinates and normals)
   // Same data can be used for vertex and normal
