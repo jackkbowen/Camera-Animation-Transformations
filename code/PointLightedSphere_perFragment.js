@@ -54,6 +54,15 @@ function main() {
     return;
   }
 
+  
+  // Initialize shaders
+  var cylinderProgram = createProgram(gl, VSHADER_SOURCE, FSHADER_SOURCE);
+  
+  if (!cylinderProgram) {
+    console.log('Failed to intialize shaders.');
+    return;
+  }
+
   // Initialize shaders
   if (!initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE)) {
     console.log('Failed to intialize shaders.');
@@ -72,23 +81,24 @@ function main() {
   gl.enable(gl.DEPTH_TEST);
 
   // Get the storage locations of uniform variables
-  var u_ModelMatrix = gl.getUniformLocation(gl.program, 'u_ModelMatrix');
-  var u_MvpMatrix = gl.getUniformLocation(gl.program, 'u_MvpMatrix');
-  var u_NormalMatrix = gl.getUniformLocation(gl.program, 'u_NormalMatrix');
-  var u_LightColor = gl.getUniformLocation(gl.program, 'u_LightColor');
-  var u_LightPosition = gl.getUniformLocation(gl.program, 'u_LightPosition');
-  var u_AmbientLight = gl.getUniformLocation(gl.program, 'u_AmbientLight');
-  if (!u_ModelMatrix || !u_MvpMatrix || !u_NormalMatrix || !u_LightColor || !u_LightPosition　|| !u_AmbientLight) { 
+  cylinderProgram.u_ModelMatrix = gl.getUniformLocation(cylinderProgram, 'u_ModelMatrix');
+  cylinderProgram.u_MvpMatrix = gl.getUniformLocation(cylinderProgram, 'u_MvpMatrix');
+  cylinderProgram.u_NormalMatrix = gl.getUniformLocation(cylinderProgram, 'u_NormalMatrix');
+  cylinderProgram.u_LightColor = gl.getUniformLocation(cylinderProgram, 'u_LightColor');
+  cylinderProgram.u_LightPosition = gl.getUniformLocation(cylinderProgram, 'u_LightPosition');
+  cylinderProgram.u_AmbientLight = gl.getUniformLocation(cylinderProgram, 'u_AmbientLight');
+  if (!cylinderProgram.u_ModelMatrix || !cylinderProgram.u_MvpMatrix || !cylinderProgram.u_NormalMatrix || 
+    !cylinderProgram.u_LightColor || !cylinderProgram.u_LightPosition　|| !cylinderProgram.u_AmbientLight) { 
     console.log('Failed to get the storage location');
     return;
   }
 
   // Set the light color (white)
-  gl.uniform3f(u_LightColor, 0.8, 0.8, 0.8);
+  gl.uniform3f(cylinderProgram.u_LightColor, 0.8, 0.8, 0.8);
   // Set the light direction (in the world coordinate)
-  gl.uniform3f(u_LightPosition, 4.0, 1.0, 1.0);
+  gl.uniform3f(cylinderProgram.u_LightPosition, 4.0, 1.0, 1.0);
   // Set the ambient light
-  gl.uniform3f(u_AmbientLight, 0.5, 0.2, 0.2);
+  gl.uniform3f(cylinderProgram.u_AmbientLight, 0.5, 0.2, 0.2);
 
   var modelMatrix = new Matrix4();  // Model matrix
   var mvpMatrix = new Matrix4();    // Model view projection matrix
@@ -105,13 +115,13 @@ function main() {
   normalMatrix.transpose();
 
   // Pass the model matrix to u_ModelMatrix
-  gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+  gl.uniformMatrix4fv(cylinderProgram.u_ModelMatrix, false, modelMatrix.elements);
 
   // Pass the model view projection matrix to u_mvpMatrix
-  gl.uniformMatrix4fv(u_MvpMatrix, false, mvpMatrix.elements);
+  gl.uniformMatrix4fv(cylinderProgram.u_MvpMatrix, false, mvpMatrix.elements);
 
   // Pass the transformation matrix for normals to u_NormalMatrix
-  gl.uniformMatrix4fv(u_NormalMatrix, false, normalMatrix.elements);
+  gl.uniformMatrix4fv(cylinderProgram.u_NormalMatrix, false, normalMatrix.elements);
 
   // Clear color and depth buffer
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -121,7 +131,7 @@ function main() {
 }
 
 function initVertexBuffers(gl) {
-  var CYLINDER_DIV = 15;
+  var CYLINDER_DIV = 20;
   var CYLINDER_HEIGHT = 1.0;
   var CYLINDER_RADIUS = 0.5;
 
