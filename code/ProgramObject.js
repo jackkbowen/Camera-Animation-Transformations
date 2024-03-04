@@ -98,6 +98,12 @@ var g_normalMatrix = new Matrix4();
 // The increments of rotation angle (degrees)
 var ANGLE_STEP = 45;  
 
+var animationToggle = false;
+var cameraToggle = false; // False = Perspective    True = Orthographic
+var currentAngle = 90.0; // Current rotation angle (degrees)
+var zoomValue = 45.0;
+var orthoScale = 0.0;
+
 
 
 
@@ -148,41 +154,79 @@ function main() {
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
   // Calculate the view projection matrix
-  viewProjMatrix.setPerspective(30.0, canvas.width/canvas.height, 1.0, 100.0);
-  var currentAngle = 0.0; // Current rotation angle (degrees)
-  var lookAtX = 0.0;
-  var lookAtY = 0.0;
-  viewProjMatrix.lookAt(5.0, 5.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+  viewProjMatrix.setPerspective(zoomValue, canvas.width/canvas.height, 1.0, 100.0);
+  viewProjMatrix.lookAt(0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
   
   gl.useProgram(cylinderProgram);
   
   // Set the light color (white)
   gl.uniform3f(cylinderProgram.u_LightColor,  0.8, 0.8, 0.8);
-  var lightDirection = new Vector3([ 4.0, 1.0, 1.0]);
+  var lightDirection = new Vector3([ 5.0, 5.0, 5.0]);
   lightDirection.normalize();     // Normalize
   gl.uniform3fv(cylinderProgram.u_LightPosition, lightDirection.elements);
   // Set the ambient light
-  gl.uniform3f(cylinderProgram.u_AmbientLight, 0.5, 0.2, 0.2);
+  gl.uniform3f(cylinderProgram.u_AmbientLight, 0.2, 0.0, 0.5);
 
+  document.getElementById("cameraSwitch").addEventListener("click", function() {
+    cameraToggle = cameraToggle ? false : true;
+    
+  });
+
+  document.getElementById("animationSwitch").addEventListener("click", async function() {
+    animationToggle = animationToggle ? false : true;
+    console.log(animationToggle);
+    while (animationToggle) {
+      await sleep(75);
+      if (!animationToggle) {
+        viewProjMatrix.setPerspective(zoomValue, canvas.width/canvas.height, 1.0, 100.0);
+        viewProjMatrix.lookAt(0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+        break;
+      }
+      viewProjMatrix.lookAt(0.0, 0.0, 0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0);
+      initCylinders(gl, cylinderProgram, cube, -2.0, currentAngle, viewProjMatrix);
+    
+      if (!animationToggle) {
+        if (!cameraToggle) {
+        viewProjMatrix.setPerspective(zoomValue, canvas.width/canvas.height, 1.0, 100.0);
+        }
+        else {
+          viewProjMatrix.setOrtho(-orthoScale, orthoScale, -orthoScale, orthoScale, 1.0, 100.0);
+        }
+        viewProjMatrix.lookAt(0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+        break;
+      }
+    }
+
+
+  });
 
   document.getElementById("moveX").addEventListener("input", function() {
-    viewProjMatrix.setPerspective(90-this.value, canvas.width/canvas.height, 1.0, 100.0);
-    viewProjMatrix.lookAt(5.0, 5.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+    zoomValue = 90-this.value;
+    orthoScale = this.value/15;
+    if (!cameraToggle) {
+      viewProjMatrix.setPerspective(zoomValue, canvas.width/canvas.height, 1.0, 100.0);
+      viewProjMatrix.lookAt(0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+    }
+    else {
+       viewProjMatrix.setOrtho(-orthoScale, orthoScale, -orthoScale, orthoScale, 1.0, 100.0);
+       viewProjMatrix.lookAt(0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+    }
+    
+    
     console.log(this.value);
     initCylinders(gl, cylinderProgram, cube, -2.0, currentAngle, viewProjMatrix);
   });
 
   // Start drawing
-  var tick = function() {
+  var tick = async function() {
     currentAngle = animate(currentAngle);  // Update current rotation angle
-
+    
+    //console.log(Math.cos(currentAngle*Math.PI/180));
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); // Clear color and depth buffers
     // Draw a cube in single color
     initCylinders(gl, cylinderProgram, cube, -2.0, currentAngle, viewProjMatrix);
+    console.log(viewProjMatrix.elements);
   
-    //viewProjMatrix.lookAt(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
-    //viewProjMatrix.lookAt(0.0, 0.0, 8.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
-    
 
     window.requestAnimationFrame(tick, canvas);
   };
@@ -200,26 +244,21 @@ function initCylinders(gl, program, o, x, angle, viewProjMatrix) {
   
   // Calculate a model matrix
   
-  g_modelMatrix.setTranslate(-1, 0.0, 0.0);
+  g_modelMatrix.setTranslate(-0.5, 0.0, 0.0);
   g_modelMatrix.rotate(angle, 0.0, 1.0, 0.0);
-  g_modelMatrix.scale(0.5, 0.5, 0.5);
+  g_modelMatrix.scale(0.6, 0.6, 0.6);
   
   g_mvpMatrix.set(viewProjMatrix).multiply(g_modelMatrix);
   gl.uniformMatrix4fv(program.u_MvpMatrix, false, g_mvpMatrix.elements);
-  
-  var lookAtX = Math.cos(angle*Math.PI/180);
-  var lookAtY = Math.sin(angle*Math.PI/180);
-  //console.log(lookAtX, lookAtY);
-  //viewProjMatrix.lookAt(lookAtX, 0.0, lookAtY, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 
   drawCylinders(gl, program, o, x, angle, viewProjMatrix);   // Draw
 
   
   // Calculate a model matrix
-  g_modelMatrix.setTranslate(1, 0.0, 0.0);
-  g_modelMatrix.rotate(35.0, 1.0, 0.0, 0.0);
+  g_modelMatrix.setTranslate(0.5, 0.0, 0.0);
+  g_modelMatrix.rotate(-35.0, 1.0, 0.0, 0.0);
   g_modelMatrix.rotate(angle, 0.0, 1.0, 0.0);
-  g_modelMatrix.scale(0.5, 0.5, 0.5);
+  g_modelMatrix.scale(0.6, 0.6, 0.6);
   
   g_mvpMatrix.set(viewProjMatrix).multiply(g_modelMatrix);
   gl.uniformMatrix4fv(program.u_MvpMatrix, false, g_mvpMatrix.elements);
@@ -236,8 +275,6 @@ function initAttributeVariable(gl, a_attribute, buffer) {
 
 
 function drawCylinders(gl, program, o, x, angle, viewProjMatrix) {
- 
-
   // Calculate transformation matrix for normals and pass it to u_NormalMatrix
   g_normalMatrix.setInverseOf(g_modelMatrix);
   g_normalMatrix.transpose();
@@ -289,14 +326,13 @@ function animate(angle) {
   var elapsed = now - last;
   last = now;
   // Update the current rotation angle (adjusted by the elapsed time)
-  var newAngle = angle + (ANGLE_STEP * elapsed) / 1000.0;
+  var newAngle = angle - (ANGLE_STEP * elapsed) / 1000.0;
   return newAngle % 360;
 }
 
-
-
-
-
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 
 // ---------------------------------------------------------------
@@ -304,10 +340,10 @@ function animate(angle) {
 // ---------------------------------------------------------------
 
 
-function initVertexBuffers(gl) {
-  var CYLINDER_DIV = 14;
+function initVertexBuffers(gl) { // Create a sphere
+  var CYLINDER_DIV = 15;
   var CYLINDER_HEIGHT = 1.0;
-  var CYLINDER_RADIUS = 0.4;
+  var CYLINDER_RADIUS = 0.5;
 
   var positions = [];
   var normals = [];
@@ -389,6 +425,7 @@ function initVertexBuffers(gl) {
   var vertices = new Float32Array(positions);
   var normals = new Float32Array(normals);
   var indices1 = new Uint8Array(indices);
+
 
   var o = new Object(); // Utilize Object to to return multiple buffer objects together
 
